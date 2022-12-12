@@ -1,6 +1,7 @@
 package com.example.team9_SpringSecurity.dto;
 
 import com.example.team9_SpringSecurity.entity.Reply;
+import com.example.team9_SpringSecurity.service.MemoService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -22,4 +23,6 @@ public interface MemoResponseDtoBuilderInterface {
     MemoResponseDtoBuilderInterface addReply(List<Reply> replies);
 
     MemoResponseDto getMemos();
+
+    MemoResponseDtoBuilderInterface totalcnt(int totalCommentCount);
 }

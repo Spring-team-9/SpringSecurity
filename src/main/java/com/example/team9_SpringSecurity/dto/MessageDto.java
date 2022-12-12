@@ -13,30 +13,40 @@ public class MessageDto {
     private String message;
     private Object data;
 
-    public MessageDto(){
+    public MessageDto() {
     }
 
-    public MessageDto(StatusEnum status){
+    public MessageDto(StatusEnum status) {
         this.status = status.statusCode;
         this.message = status.code;
     }
 
-    public MessageDto(StatusEnum status, MemoResponseDto dto){
-        this.status = status.statusCode;
-        this.message = status.code;
-        this.data = dto;
-    }
-
-    public MessageDto(StatusEnum status, ReplyResponseDto dto){
+    public MessageDto(StatusEnum status, MemoResponseDto dto) {
         this.status = status.statusCode;
         this.message = status.code;
         this.data = dto;
     }
 
-
-    public MessageDto(StatusEnum status, List<MemoResponseDto> dto){
+    public MessageDto(StatusEnum status, ReplyResponseDto dto) {
         this.status = status.statusCode;
         this.message = status.code;
         this.data = dto;
+    }
+
+    public MessageDto(StatusEnum status, LikeResponseDto dto) {
+        this.status = status.statusCode;
+        this.message = status.code;
+        this.data = dto;
+    }
+
+    public MessageDto(StatusEnum status, List<MemoResponseDto> dto) {
+        this.status = status.statusCode;
+        this.message = status.code;
+        this.data = dto;
+    }
+
+    public MessageDto(int status, String message) {
+        this.status = status;
+        this.message = message;
     }
 }

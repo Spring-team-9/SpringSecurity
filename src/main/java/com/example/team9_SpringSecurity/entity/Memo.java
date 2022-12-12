@@ -3,6 +3,7 @@ package com.example.team9_SpringSecurity.entity;
 import com.example.team9_SpringSecurity.dto.MemoRequestDto;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.Formula;
 
 import javax.persistence.*;
 import java.util.ArrayList;
@@ -31,22 +32,26 @@ public class Memo extends Timestamped {
     @JoinColumn(name = "user_id")
     private User user;
 
-    @OneToMany(mappedBy = "memo", cascade = CascadeType.REMOVE) // 글 하나가 삭제되면 맵핑되어있는 쪽 테이블이름!!! 글도 삭제되는 cascade 연속성 전이 속성
-    @OrderBy("createdAt desc ")                                 // 엔티티단에서 정렬
-    private List<Reply> replies = new ArrayList<>();            // 일대다의 다 부분을 List로 받기
+    @OneToMany(mappedBy = "memo", cascade = CascadeType.REMOVE)         // 글 하나가 삭제되면 맵핑되어있는 쪽 테이블이름!!! 글도 삭제되는 cascade 연속성 전이 속성
 
+    @OrderBy("createdAt desc ")                                         // 엔티티단에서 정렬
+    private List<Reply> replies = new ArrayList<>();                    // 일대다의 다 부분을 List로 받기
 
-    public Memo(MemoRequestDto dto, User user){
+    @OneToMany(mappedBy = "memo", cascade = CascadeType.REMOVE)
+    private List<LikeMemo> likes = new ArrayList<>();
 
+    @Formula("(select count(1) from like_memo where like_memo.memo_id = memo_id)")
+    private int totalCommentCount;
+
+    public Memo(MemoRequestDto dto, User user) {
         this.title = dto.getTitle();
         this.username = user.getUsername();
         this.content = dto.getContent();
         this.user = user;
-
+        this.totalCommentCount = getTotalCommentCount();
     }
 
-    public void update(MemoRequestDto dto){
-
+    public void update(MemoRequestDto dto) {
         this.title = dto.getTitle();
         this.content = dto.getContent();
     }

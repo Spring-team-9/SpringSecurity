@@ -14,6 +14,8 @@ public class MemoResponseDtoBuilder implements MemoResponseDtoBuilderInterface{
     private String content;
     private LocalDateTime createdAt;
     private LocalDateTime modifiedAt;
+    private int totalcnt;
+//    private Long count;
     private List<ReplyResponseDto> replies = new ArrayList<>();
 
 
@@ -53,6 +55,11 @@ public class MemoResponseDtoBuilder implements MemoResponseDtoBuilderInterface{
         return this;
     }
 
+    public MemoResponseDtoBuilder totalcnt (int totalcnt) {
+        this.totalcnt = totalcnt;
+        return this;
+    }
+
     @Override
     public MemoResponseDtoBuilderInterface addReply(List<Reply> replies) {
         for(int i=0; i<replies.size(); i++){
@@ -63,6 +70,6 @@ public class MemoResponseDtoBuilder implements MemoResponseDtoBuilderInterface{
 
     @Override
     public MemoResponseDto getMemos() {
-        return new MemoResponseDto(id, title, username, content, createdAt, modifiedAt, replies);
+        return new MemoResponseDto(id, title, username, content, createdAt, modifiedAt, replies, totalcnt);
     }
 }

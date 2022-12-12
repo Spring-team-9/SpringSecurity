@@ -15,11 +15,11 @@ public class MemoResponseDto {
     private String content;
     private LocalDateTime createdAt;
     private LocalDateTime modifiedAt;
-
+    private int totalcnt;
     private List<ReplyResponseDto> replies = new ArrayList<>();
 
-        // Builder 구현해서 사용
-        public MemoResponseDto(Long id, String title, String username, String content, LocalDateTime createdAt, LocalDateTime modifiedAt, List<ReplyResponseDto> replies) {
+    // Builder 구현해서 사용
+    public MemoResponseDto(Long id, String title, String username, String content, LocalDateTime createdAt, LocalDateTime modifiedAt, List<ReplyResponseDto> replies, int totalcnt) {
         this.id = id;
         this.title = title;
         this.username = username;
@@ -27,5 +27,6 @@ public class MemoResponseDto {
         this.createdAt = createdAt;
         this.modifiedAt = modifiedAt;
         this.replies = replies;
+        this.totalcnt = totalcnt;
     }
 }
