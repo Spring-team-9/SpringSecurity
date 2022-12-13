@@ -1,4 +1,4 @@
-package com.example.assignment_memo.util.error;
+package com.example.assignment_memo.util.ApiResponse;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -6,7 +6,7 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor
-public enum ErrorCode {
+public enum CodeError {
     // 200
     OK(HttpStatus.OK, "OK"),
 

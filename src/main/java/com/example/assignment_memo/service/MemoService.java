@@ -6,7 +6,7 @@ import com.example.assignment_memo.repository.MemoLikeRepository;
 import com.example.assignment_memo.repository.MemoRepository;
 import com.example.assignment_memo.repository.ReplyLikeRepository;
 import com.example.assignment_memo.repository.ReplyRepository;
-import com.example.assignment_memo.util.error.CustomException;
+import com.example.assignment_memo.util.ApiResponse.CustomException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import static com.example.assignment_memo.util.error.ErrorCode.*;
+import static com.example.assignment_memo.util.ApiResponse.CodeError.*;
 
 @Service
 @RequiredArgsConstructor        // 생성자 자동 주입

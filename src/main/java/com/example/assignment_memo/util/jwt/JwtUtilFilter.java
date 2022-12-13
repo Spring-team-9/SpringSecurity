@@ -1,6 +1,6 @@
 package com.example.assignment_memo.util.jwt;
 
-import com.example.assignment_memo.util.error.CustomException;
+import com.example.assignment_memo.util.ApiResponse.CustomException;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +15,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
-import static com.example.assignment_memo.util.error.ErrorCode.INVALID_TOKEN;
+import static com.example.assignment_memo.util.ApiResponse.CodeError.INVALID_TOKEN;
 
 @Slf4j
 @RequiredArgsConstructor

@@ -4,6 +4,8 @@ import com.example.assignment_memo.dto.LoginRequestDto;
 import com.example.assignment_memo.dto.MessageDto;
 import com.example.assignment_memo.dto.SignupRequestDto;
 import com.example.assignment_memo.service.UserService;
+import com.example.assignment_memo.util.ApiResponse.ApiResult;
+import com.example.assignment_memo.util.ApiResponse.ApiUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,14 +25,22 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping("/signup")
-    public ResponseEntity<MessageDto> signup(@RequestBody @Valid SignupRequestDto dto){
+//    public ResponseEntity<MessageDto> signup(@RequestBody @Valid SignupRequestDto dto){
+//        MessageDto messageDto = userService.signup(dto);
+//        return new ResponseEntity<>(messageDto, HttpStatus.OK);
+//    }
+    public ApiResult<?> signup(@RequestBody @Valid SignupRequestDto dto){
         MessageDto messageDto = userService.signup(dto);
-        return new ResponseEntity<>(messageDto, HttpStatus.OK);
+        return ApiUtil.successResponse(messageDto);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<MessageDto> login(@RequestBody LoginRequestDto dto, HttpServletResponse response){
+//    public ResponseEntity<MessageDto> login(@RequestBody LoginRequestDto dto, HttpServletResponse response){
+//        MessageDto messageDto = userService.login(dto, response);
+//        return new ResponseEntity<>(messageDto, HttpStatus.OK);
+//    }
+    public ApiResult<?> login(@RequestBody LoginRequestDto dto, HttpServletResponse response){
         MessageDto messageDto = userService.login(dto, response);
-        return new ResponseEntity<>(messageDto, HttpStatus.OK);
+        return ApiUtil.successResponse(messageDto);
     }
 }

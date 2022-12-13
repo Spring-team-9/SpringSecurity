@@ -2,14 +2,14 @@ package com.example.assignment_memo.util.security;
 
 import com.example.assignment_memo.entity.User;
 import com.example.assignment_memo.repository.UserRepository;
-import com.example.assignment_memo.util.error.CustomException;
+import com.example.assignment_memo.util.ApiResponse.CustomException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import static com.example.assignment_memo.util.error.ErrorCode.MEMBER_NOT_FOUND;
+import static com.example.assignment_memo.util.ApiResponse.CodeError.MEMBER_NOT_FOUND;
 
 @Service
 @RequiredArgsConstructor

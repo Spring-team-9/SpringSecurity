@@ -4,6 +4,8 @@ import com.example.assignment_memo.dto.MemoRequestDto;
 import com.example.assignment_memo.dto.MessageDto;
 import com.example.assignment_memo.dto.ReplyRequestDto;
 import com.example.assignment_memo.service.MemoService;
+import com.example.assignment_memo.util.ApiResponse.ApiResult;
+import com.example.assignment_memo.util.ApiResponse.ApiUtil;
 import com.example.assignment_memo.util.security.UserDetailsImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -20,17 +22,26 @@ public class MemoController {
     // ----------------- 글 기능
     // 전체글 조회
     @GetMapping("/api/memos") // GET방식
-    public ResponseEntity<MessageDto> getMemos (){
+//    public ResponseEntity<MessageDto> getMemos (){
+//        MessageDto messageDto = memoService.getMemos();
+//        return new ResponseEntity<>(messageDto, HttpStatus.OK);
+//    }
+    public ApiResult<?> getMemos (){
         MessageDto messageDto = memoService.getMemos();
-        return new ResponseEntity<>(messageDto, HttpStatus.OK);
+        return ApiUtil.successResponse(messageDto);
     }
 
     // 선택글 조회
     @GetMapping("/api/memos/{id}") // GET방식
-    public ResponseEntity<MessageDto> getMemo (@PathVariable Long id){
+//    public ResponseEntity<MessageDto> getMemo (@PathVariable Long id){
+//        MessageDto messageDto = memoService.getMemos(id);
+//        return new ResponseEntity<>(messageDto, HttpStatus.OK);
+//    }
+    public ApiResult<?> getMemo (@PathVariable Long id){
         MessageDto messageDto = memoService.getMemos(id);
-        return new ResponseEntity<>(messageDto, HttpStatus.OK);
+        return ApiUtil.successResponse(messageDto);
     }
+
 
     // 글 작성
     @PostMapping("/api/memos")  //POST방식
@@ -41,6 +52,7 @@ public class MemoController {
         MessageDto messageDto = memoService.createMemo(dto, userDetails.getUser());
         return new ResponseEntity<>(messageDto, HttpStatus.OK);
     }
+
 
     // 글 수정
     @PutMapping("/api/memos/{id}") // PUT방식
