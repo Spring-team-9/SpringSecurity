@@ -6,6 +6,7 @@ import com.example.assignment_memo.dto.SignupRequestDto;
 import com.example.assignment_memo.service.UserService;
 import com.example.assignment_memo.util.ApiResponse.ApiResult;
 import com.example.assignment_memo.util.ApiResponse.ApiUtil;
+import com.example.assignment_memo.util.ApiResponse.CodeSuccess;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -29,9 +30,9 @@ public class UserController {
 //        MessageDto messageDto = userService.signup(dto);
 //        return new ResponseEntity<>(messageDto, HttpStatus.OK);
 //    }
-    public ApiResult<?> signup(@RequestBody @Valid SignupRequestDto dto){
+    public ApiResult signup(@RequestBody @Valid SignupRequestDto dto){
         MessageDto messageDto = userService.signup(dto);
-        return ApiUtil.successResponse(messageDto);
+        return ApiUtil.successResponse(CodeSuccess.JOIN_OK, messageDto);
     }
 
     @PostMapping("/login")
@@ -39,8 +40,8 @@ public class UserController {
 //        MessageDto messageDto = userService.login(dto, response);
 //        return new ResponseEntity<>(messageDto, HttpStatus.OK);
 //    }
-    public ApiResult<?> login(@RequestBody LoginRequestDto dto, HttpServletResponse response){
+    public ApiResult login(@RequestBody LoginRequestDto dto, HttpServletResponse response){
         MessageDto messageDto = userService.login(dto, response);
-        return ApiUtil.successResponse(messageDto);
+        return ApiUtil.successResponse(CodeSuccess.LOGIN_OK, messageDto);
     }
 }

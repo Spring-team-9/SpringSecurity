@@ -1,6 +1,7 @@
 package com.example.assignment_memo.util.jwt;
 
 import com.example.assignment_memo.entity.UserRoleEnum;
+import com.example.assignment_memo.util.ApiResponse.CustomException;
 import com.example.assignment_memo.util.security.UserDetailsServiceImpl;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -19,6 +20,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.security.Key;
 import java.util.Base64;
 import java.util.Date;
+
+import static com.example.assignment_memo.util.ApiResponse.CodeError.INVALID_TOKEN;
 
 @Slf4j // Simple Logging Facade for Java의 약자로 로깅에 대한 추상 레이어를 제공하는 인터페이스 모음
 @Component  // Bean으로 등록해 다른데서도 의존성 주입 가능하게
@@ -85,14 +88,19 @@ public class JwtUtil {
             return true;
         } catch (SecurityException | MalformedJwtException e) { // 전: 권한 없다면 발생 , 후: JWT가 올바르게 구성되지 않았다면 발생
             log.info("Invalid JWT signature, 유효하지 않는 JWT 서명 입니다.");
+            throw new CustomException(INVALID_TOKEN);
         } catch (ExpiredJwtException e) {   // JWT만료
             log.info("Expired JWT token, 만료된 JWT token 입니다.");
+            throw new CustomException(INVALID_TOKEN);
         } catch (UnsupportedJwtException e) {
             log.info("Unsupported JWT token, 지원되지 않는 JWT 토큰 입니다.");
+            throw new CustomException(INVALID_TOKEN);
         } catch (IllegalArgumentException e) {
             log.info("JWT claims is empty, 잘못된 JWT 토큰 입니다.");
+            throw new CustomException(INVALID_TOKEN);
+        } finally {
+            return false;
         }
-        return false;
     }
 
     // 토큰에서 사용자 정보 가져오기

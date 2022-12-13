@@ -8,7 +8,7 @@ import javax.persistence.*;
 @Getter
 @Entity
 @NoArgsConstructor
-public class MemoLike {
+public class LikeReply {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
@@ -21,9 +21,14 @@ public class MemoLike {
     @JoinColumn(name = "memo_id")
     private Memo memo;
 
+    @ManyToOne
+    @JoinColumn(name = "reply_id")
+    private Reply reply;
 
-    public MemoLike(User user, Memo memo){
+
+    public LikeReply(User user, Memo memo, Reply reply){
         this.user = user;
         this.memo = memo;
+        this.reply = reply;
     }
 }

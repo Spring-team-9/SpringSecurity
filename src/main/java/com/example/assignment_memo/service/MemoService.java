@@ -2,9 +2,9 @@ package com.example.assignment_memo.service;
 
 import com.example.assignment_memo.dto.*;
 import com.example.assignment_memo.entity.*;
-import com.example.assignment_memo.repository.MemoLikeRepository;
+import com.example.assignment_memo.repository.LikeMemoRepository;
 import com.example.assignment_memo.repository.MemoRepository;
-import com.example.assignment_memo.repository.ReplyLikeRepository;
+import com.example.assignment_memo.repository.LikeReplyRepository;
 import com.example.assignment_memo.repository.ReplyRepository;
 import com.example.assignment_memo.util.ApiResponse.CustomException;
 import lombok.RequiredArgsConstructor;
@@ -23,8 +23,8 @@ public class MemoService {
 
     private final MemoRepository memoRepository;
     private final ReplyRepository replyRepository;
-    private final MemoLikeRepository memoLikeRepository;
-    private final ReplyLikeRepository replyLikeRepository;
+    private final LikeMemoRepository likeMemoRepository;
+    private final LikeReplyRepository likeReplyRepository;
 
 
     // 전체 글 조회
@@ -196,13 +196,13 @@ public class MemoService {
                 () -> new CustomException(MEMO_NOT_FOUND)
         );
 
-        Optional<MemoLike> likes = memoLikeRepository.findByMemo_MemoIdAndUser_Id(memo.getMemoId(),user.getId());
+        Optional<LikeMemo> likes = likeMemoRepository.findByMemo_MemoIdAndUser_Id(memo.getMemoId(),user.getId());
         if(likes.isPresent()){
             throw new CustomException(DUPLICATE_RESOURCE);
         }
 
-        MemoLike like = new MemoLike(user, memo);
-        memoLikeRepository.save(like);
+        LikeMemo like = new LikeMemo(user, memo);
+        likeMemoRepository.save(like);
 
         MemoResponseDtoBuilder mrdBuilder = new MemoResponseDtoBuilder();
         MemoResponseDto responseDto =
@@ -225,12 +225,12 @@ public class MemoService {
                 () -> new CustomException(MEMO_NOT_FOUND)
         );
 
-        Optional<MemoLike> likes = memoLikeRepository.findByMemo_MemoIdAndUser_Id(memo.getMemoId(),user.getId());
+        Optional<LikeMemo> likes = likeMemoRepository.findByMemo_MemoIdAndUser_Id(memo.getMemoId(),user.getId());
         if(likes.isEmpty()){
             throw new CustomException(NOT_FOUND);
         }
 
-        memoLikeRepository.deleteById(likes.get().getId());
+        likeMemoRepository.deleteById(likes.get().getId());
         return new MessageDto(StatusEnum.OK);
     }
 
@@ -244,13 +244,13 @@ public class MemoService {
                 () -> new CustomException(REPLY_NOT_FOUND)
         );
 
-        Optional<ReplyLike> likes = replyLikeRepository.findByMemo_memoIdAndReply_ReplyIdAndUser_Id(memo.getMemoId(),reply.getReplyId(),user.getId());
+        Optional<LikeReply> likes = likeReplyRepository.findByMemo_memoIdAndReply_ReplyIdAndUser_Id(memo.getMemoId(),reply.getReplyId(),user.getId());
         if(likes.isPresent()){
             throw new CustomException(DUPLICATE_RESOURCE);
         }
 
-        ReplyLike like = new ReplyLike(user, memo, reply);
-        replyLikeRepository.save(like);
+        LikeReply like = new LikeReply(user, memo, reply);
+        likeReplyRepository.save(like);
 
         ReplyResponseDto responseDto = new ReplyResponseDto(reply, cnt("Reply", reply.getReplyId()));
         return new MessageDto(StatusEnum.OK, responseDto);
@@ -266,12 +266,12 @@ public class MemoService {
                 () -> new CustomException(REPLY_NOT_FOUND)
         );
 
-        Optional<ReplyLike> likes = replyLikeRepository.findByMemo_memoIdAndReply_ReplyIdAndUser_Id(memo.getMemoId(),reply.getReplyId(),user.getId());
+        Optional<LikeReply> likes = likeReplyRepository.findByMemo_memoIdAndReply_ReplyIdAndUser_Id(memo.getMemoId(),reply.getReplyId(),user.getId());
         if(likes.isEmpty()){
             throw new CustomException(NOT_FOUND);
         }
 
-        replyLikeRepository.deleteById(likes.get().getId());
+        likeReplyRepository.deleteById(likes.get().getId());
 
         return new MessageDto(StatusEnum.OK);
     }
@@ -281,11 +281,11 @@ public class MemoService {
         Optional<Long> likeCnt;
         switch (entity) {
             case "Memo" -> {
-                likeCnt = memoLikeRepository.countByMemo_MemoId(id);
+                likeCnt = likeMemoRepository.countByMemo_MemoId(id);
                 return likeCnt.get();
             }
             case "Reply" -> {
-                likeCnt = replyLikeRepository.countByReply_ReplyId(id);
+                likeCnt = likeReplyRepository.countByReply_ReplyId(id);
                 return likeCnt.get();
             }
             default -> throw new CustomException(NOT_FOUND);
@@ -297,7 +297,7 @@ public class MemoService {
         List<ReplyResponseDto> exportReplies = new ArrayList<>();
         for(int i=0; i<replies.size(); i++){
             Long test1 = replies.get(i).getReplyId();
-            Optional<Long> likeCnt = replyLikeRepository.countByReply_ReplyId(replies.get(i).getReplyId());
+            Optional<Long> likeCnt = likeReplyRepository.countByReply_ReplyId(replies.get(i).getReplyId());
             exportReplies.add(new ReplyResponseDto(replies.get(i), likeCnt.get()));
             Long likeCntL = likeCnt.get();
         }

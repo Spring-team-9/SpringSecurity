@@ -19,7 +19,7 @@ import static com.example.assignment_memo.util.ApiResponse.CodeError.INVALID_TOK
 
 @Slf4j
 @RequiredArgsConstructor
-public class JwtUtilFilter extends OncePerRequestFilter {
+public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtUtil jwtUtil;
 
     @Override
@@ -29,10 +29,8 @@ public class JwtUtilFilter extends OncePerRequestFilter {
 
         if(token != null) {
             if(!jwtUtil.validateToken(token)){
-//                jwtExceptionHandler(response, "Token Error", HttpStatus.UNAUTHORIZED.value());
-//                return;
 
-                throw new CustomException(INVALID_TOKEN);  // 이부분 수정해야함***
+                throw new CustomException(INVALID_TOKEN);
             }
             Claims info = jwtUtil.getUserInfoFromToken(token);
             setAuthentication(info.getSubject());

@@ -7,8 +7,6 @@ import org.springframework.http.HttpStatus;
 @Getter
 @AllArgsConstructor
 public enum CodeError {
-    // 200
-    OK(HttpStatus.OK, "OK"),
 
     //400 BAD_REQUEST : 잘못된 요청
     BAD_REQUEST(HttpStatus.BAD_REQUEST, "BAD_REQUEST"),
