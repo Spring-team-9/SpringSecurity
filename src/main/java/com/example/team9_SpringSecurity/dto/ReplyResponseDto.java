@@ -10,13 +10,20 @@ public class ReplyResponseDto {
     private Long memoId;
     private String replyName;
     private String replyContent;
-    private int totalcnt;
+    private Long totalcnt;
 
     public ReplyResponseDto(Reply reply) {
         this.replyId = reply.getReplyId();
         this.memoId = reply.getMemo().getMemoId();
         this.replyName = reply.getReplyName();
         this.replyContent = reply.getReplyContent();
-        this.totalcnt = reply.getTotalCommentCount();
+    }
+
+    public ReplyResponseDto(Reply reply, Long totalcnt) {
+        this.replyId = reply.getReplyId();
+        this.memoId = reply.getMemo().getMemoId();
+        this.replyName = reply.getReplyName();
+        this.replyContent = reply.getReplyContent();
+        this.totalcnt = totalcnt;
     }
 }

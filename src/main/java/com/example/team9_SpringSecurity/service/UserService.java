@@ -12,7 +12,9 @@ import com.example.team9_SpringSecurity.jwt.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import static com.example.team9_SpringSecurity.util.error.ErrorCode.*;
@@ -59,4 +61,28 @@ public class UserService {
 
         return new MessageDto(StatusEnum.OK);
     }
+
+    @Transactional
+    // 회원탈퇴
+    public MessageDto delete(LoginRequestDto dto, HttpServletRequest request) {
+        String username = dto.getUsername();
+        String password = dto.getPassword();
+
+        User user = userRepository.findByUsername(username).orElseThrow(
+                () -> new CustomException(LOGIN_MATCH_FAIL)
+        );
+
+        if (!passwordEncoder.matches(password, user.getPassword())) {                                                   // 비밀번호 비교
+            throw new CustomException(PASS_MATCH_FAIL);
+        }
+
+        String token = jwtUtil.resolveToken(request);
+
+        if (token != null) {
+            userRepository.deleteByUsername(username);
+            return new MessageDto(StatusEnum.OK);
+        }
+        throw new CustomException(BAD_REQUEST_TOKEN);
+    }
+
 }

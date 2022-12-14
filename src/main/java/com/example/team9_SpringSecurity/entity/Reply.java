@@ -15,34 +15,31 @@ import java.util.List;
 public class Reply extends Timestamped{
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long replyId;
+    private Long replyId;                                           // 댓글 Id
 
-    @ManyToOne
+    @ManyToOne                                                      // Reply(many) <-> Memo(one) Join
     @JoinColumn(name = "MEMO_ID", nullable = false)
-    private Memo memo; //필드 하나가 아니라 객체로 연결해야함
+    private Memo memo;
 
-    @ManyToOne
+    @ManyToOne                                                      // Reply(many) <-> User(one) Join
     @JoinColumn(name = "user_id")
     private User user;
 
     @Column(nullable = false)
-    private String replyName;
+    private String replyName;                                       // 댓글 작성자 이름
 
     @Column(nullable = false)
-    private String replyContent;
+    private String replyContent;                                    // 댓글 내용
 
-    @OneToMany(mappedBy = "reply", cascade = CascadeType.REMOVE)
+    @OneToMany(mappedBy = "reply", cascade = CascadeType.REMOVE)    // Reply(1) <-> likeReply(n) 관계, 상위 엔티티가 삭제될 경우 하위 엔티티도 삭제되도록 영속성 전이 처리
     private List<LikeReply> likereply = new ArrayList<>();
 
-    @Formula("(select count(1) from like_Reply where like_Reply.reply_id = reply_id)")
-    private int totalCommentCount;
 
     public Reply(ReplyRequestDto dto, User user, Memo memo){
         this.memo = memo;
         this.replyName = user.getUsername();
         this.replyContent = dto.getReplyContent();
         this.user = user;
-        this.totalCommentCount = getTotalCommentCount();
     }
 
     public void update(ReplyRequestDto dto){
