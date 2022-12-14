@@ -4,15 +4,13 @@ import com.example.team9_SpringSecurity.dto.*;
 import com.example.team9_SpringSecurity.entity.*;
 import com.example.team9_SpringSecurity.repository.*;
 import com.example.team9_SpringSecurity.util.error.CustomException;
-import com.example.team9_SpringSecurity.jwt.JwtUtil;
-import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static com.example.team9_SpringSecurity.util.error.ErrorCode.*;
 
@@ -21,23 +19,22 @@ import static com.example.team9_SpringSecurity.util.error.ErrorCode.*;
 public class MemoService {
 
     private final MemoRepository memoRepository;
+
     private final UserRepository userRepository;
     private final ReplyRepository replyRepository;
     private final LikeRepository likeRepository;
-
     private final LikeReplyRepository likeReplyRepository;
-    private final JwtUtil jwtUtil;
 
 
     // 전체 글 조회
     public MessageDto getMemos() {
-        List<Memo> memolist = memoRepository.findAllByOrderByCreatedAtDesc();
-        List<MemoResponseDto> responseDtoList = new ArrayList<>();
-//        long count = likeRepository.countAllByHeartId();
+        List<Memo> memolist = memoRepository.findAllByOrderByCreatedAtDesc();               // memoList 전체를 생성일자 기준으로 조회
+        List<MemoResponseDto> responseDtoList = new ArrayList<>();                          // Dto
 
         for (Memo memo : memolist) {
+            long likeMemo = likeRepository.totalcnt(memo.getMemoId());                      // native-query를 통한 글 좋아요 cnt 개수 조회
 
-            MemoResponseDtoBuilder mrdBuilder = new MemoResponseDtoBuilder();
+            MemoResponseDtoBuilder mrdBuilder = new MemoResponseDtoBuilder();               // Builder-Pattern Dto 생성
             MemoResponseDto responseDto =
                     mrdBuilder.id(memo.getMemoId())
                             .title(memo.getTitle())
@@ -45,10 +42,9 @@ public class MemoService {
                             .content(memo.getContent())
                             .createdAt(memo.getCreatedAt())
                             .modifiedAt(memo.getModifiedAt())
-                            .totalcnt(memo.getTotalCommentCount())
-                            .addReply(memo.getReplies())
+                            .totalcnt(likeMemo)
+                            .addReply(addLikeCntToReplyRsponseDto(memo.getReplies()))       // 댓글 + native-query를 통한 댓글 좋아요 cnt 개수 조회
                             .getMemos();
-
             responseDtoList.add(responseDto);
         }
         return new MessageDto(StatusEnum.OK, responseDtoList);
@@ -56,11 +52,33 @@ public class MemoService {
 
     // 선택 글 조회 기능
     public MessageDto getMemos(Long id) {
-        Memo memo = memoRepository.findById(id).orElseThrow(
+        Memo memo = memoRepository.findById(id).orElseThrow(                                // 입력받은 id값을 Memorepository에서 검색 & 없을경우 Exception 처리
                 () -> new CustomException(MEMO_NOT_FOUND)
         );
+        long likeMemo = likeRepository.totalcnt(id);                                        // native-query를 통한 글 좋아요 cnt 개수 조회
 
+        MemoResponseDtoBuilder mrdBuilder = new MemoResponseDtoBuilder();                   // Builder-Pattern Dto 생성
+        MemoResponseDto responseDto =
+                mrdBuilder.id(memo.getMemoId())
+                        .title(memo.getTitle())
+                        .username(memo.getUsername())
+                        .content(memo.getContent())
+                        .createdAt(memo.getCreatedAt())
+                        .modifiedAt(memo.getModifiedAt())
+                        .addReply(addLikeCntToReplyRsponseDto(memo.getReplies()))
+                        .totalcnt(likeMemo)
+                        .getMemos();
 
+        return new MessageDto(StatusEnum.OK, responseDto);
+    }
+
+    // 글 작성 기능
+    public MessageDto createMemo(MemoRequestDto dto, User user) {               // dto + Spring Security(userDatailsimple)을 통한 사용자 정보 사용
+
+        Memo memo = new Memo(dto, user);                                        // requestDto + User
+        memoRepository.save(memo);                                              // 저장
+
+        long likeMemo = likeRepository.totalcnt(memo.getMemoId());              // native-query를 통한 글 좋아요 cnt 개수 조회
         MemoResponseDtoBuilder mrdBuilder = new MemoResponseDtoBuilder();
         MemoResponseDto responseDto =
                 mrdBuilder.id(memo.getMemoId())
@@ -69,23 +87,25 @@ public class MemoService {
                         .content(memo.getContent())
                         .createdAt(memo.getCreatedAt())
                         .modifiedAt(memo.getModifiedAt())
-                        .addReply(memo.getReplies())
+                        .addReply(addLikeCntToReplyRsponseDto(memo.getReplies()))
+                        .totalcnt(likeMemo)
                         .getMemos();
-
         return new MessageDto(StatusEnum.OK, responseDto);
     }
 
-    // 글 작성 기능
-    public MessageDto createMemo(MemoRequestDto dto, HttpServletRequest request) {
-        String token = jwtUtil.resolveToken(request);               // Request에서 Token 가져오기
-        Claims claims;                                              // 사용자 정보 Claims을 가져올 변수
+    // 글 수정 기능
+    @Transactional
+    public MessageDto modifyMemo(Long id, MemoRequestDto dto, User user) {      // id + dto + Spring Security(userDatailsimple)을 통한 사용자 정보 사용
+        Memo memo = memoRepository.findById(id).orElseThrow(                    // 입력받은 id값을 Memorepository에서 검색 & 없을경우 Exception 처리
+                () -> new CustomException(MEMO_NOT_FOUND)
+        );
 
-        if (token != null) {                                          // token없으면 글 생성 불가
-            User user = validateUser(token);
 
-            Memo memo = new Memo(dto, user);
-            memoRepository.save(memo);
-// 컨트롤러에서 @RequestBody 어노테이션으로 body의 내용을 가져온건데 또 할 필요 없겠지
+        if (accessPermission(memo.getUsername(), user.getUsername(), user.getRole())) {         // 권한확인(Admin, User) 로직
+
+            memo.update(dto);
+
+            long likeMemo = likeRepository.totalcnt(id);
             MemoResponseDtoBuilder mrdBuilder = new MemoResponseDtoBuilder();
             MemoResponseDto responseDto =
                     mrdBuilder.id(memo.getMemoId())
@@ -94,242 +114,118 @@ public class MemoService {
                             .content(memo.getContent())
                             .createdAt(memo.getCreatedAt())
                             .modifiedAt(memo.getModifiedAt())
+                            .addReply(addLikeCntToReplyRsponseDto(memo.getReplies()))
+                            .totalcnt(likeMemo)
                             .getMemos();
 
             return new MessageDto(StatusEnum.OK, responseDto);
-        } else {
-            throw new CustomException(BAD_REQUEST_TOKEN);
         }
-    }
-
-    // 글 수정 기능
-    @Transactional
-    public MessageDto modifyMemo(Long id, MemoRequestDto dto, HttpServletRequest request) {
-        Memo memo = memoRepository.findById(id).orElseThrow(
-                () -> new CustomException(MEMO_NOT_FOUND)
-        );
-
-        String token = jwtUtil.resolveToken(request);
-        Claims claims;
-
-        if (token != null) {
-            User user = validateUser(token);
-
-            if (accessPermission(memo.getUsername(), user.getUsername(), user.getRole())) {
-
-                memo.update(dto);  // update는 entity에 새로 정의한 함수
-
-                MemoResponseDtoBuilder mrdBuilder = new MemoResponseDtoBuilder();
-                MemoResponseDto responseDto =
-                        mrdBuilder.id(memo.getMemoId())
-                                .title(memo.getTitle())
-                                .username(memo.getUsername())
-                                .content(memo.getContent())
-                                .createdAt(memo.getCreatedAt())
-                                .modifiedAt(memo.getModifiedAt())
-                                .addReply(memo.getReplies())
-                                .getMemos();
-
-                return new MessageDto(StatusEnum.OK, responseDto);
-            }
-            throw new CustomException(NO_ACCESS);
-        } else {
-            throw new CustomException(BAD_REQUEST_TOKEN);
-        }
+        throw new CustomException(NO_ACCESS);
     }
 
 
     // 글 삭제 기능
     @Transactional
-    public MessageDto deleteMemo(Long id, HttpServletRequest request) {
+    public MessageDto deleteMemo(Long id, User user) {                                      // id + Spring Security(userDatailsimple)을 통한 사용자 정보 사용
         Memo memo = memoRepository.findById(id).orElseThrow(
                 () -> new IllegalArgumentException("해당 글이 존재하지 않습니다.")
         );
 
-        String token = jwtUtil.resolveToken(request);
 
-        if (token != null) {
-            User user = validateUser(token);
-
-            if (accessPermission(memo.getUsername(), user.getUsername(), user.getRole())) {  // 유저 대조
-                memoRepository.deleteById(id);
-                return new MessageDto(StatusEnum.OK);
-            }
-            throw new CustomException(NO_ACCESS);
+        if (accessPermission(memo.getUsername(), user.getUsername(), user.getRole())) {     // 권한확인(Admin, User) 로직 & User일 경우 타 사용자 글 삭제 불가
+            memoRepository.deleteById(id);
+            return new MessageDto(StatusEnum.OK);
         }
-        throw new CustomException(BAD_REQUEST_TOKEN);
+        throw new CustomException(NO_ACCESS);
     }
 
     // 댓글 작성 기능
-    public MessageDto createReply(Long id, ReplyRequestDto dto, HttpServletRequest request) {
+    public MessageDto createReply(Long id, ReplyRequestDto dto, User user) {                // id + dto + Spring Security(userDatailsimple)을 통한 사용자 정보 사용
         Memo memo = memoRepository.findById(id).orElseThrow(
                 () -> new CustomException(MEMO_NOT_FOUND)
         );
 
-        String token = jwtUtil.resolveToken(request);
+        Reply newOne = new Reply(dto, user, memo);
+        replyRepository.save(newOne);
 
-        if (token != null) {
-            User user = validateUser(token);
-
-            Reply newOne = new Reply(dto, user, memo);
-            replyRepository.save(newOne);
-            ReplyResponseDto responseDto = new ReplyResponseDto(newOne);
-            return new MessageDto(StatusEnum.OK, responseDto);
-        }
-        throw new CustomException(BAD_REQUEST_TOKEN);
+        long likeReply = likeReplyRepository.totalcnt(newOne.getReplyId());                  // native-query를 통한 댓글 좋아요 cnt 개수 조회
+        ReplyResponseDto responseDto = new ReplyResponseDto(newOne, likeReply);
+        return new MessageDto(StatusEnum.OK, responseDto);
     }
 
     // 댓글 수정 기능
     @Transactional
-    public MessageDto modifyReply(Long id, Long replyId, ReplyRequestDto dto, HttpServletRequest request) {
+    public MessageDto modifyReply(Long id, Long replyId, ReplyRequestDto dto, User user) {      // id + dto + Spring Security(userDatailsimple)을 통한 사용자 정보 사용
         Reply reply = replyRepository.findByMemo_MemoIdAndReplyId(id, replyId).orElseThrow(
                 () -> new CustomException(MEMO_NOT_FOUND)
         );
-        String token = jwtUtil.resolveToken(request);
 
-        if (token != null) {
-            User user = validateUser(token);
+        if (accessPermission(reply.getReplyName(), user.getUsername(), user.getRole())) {       // 권한확인(Admin, User) 로직 & User일 경우 타 사용자 글 삭제 불가
+            reply.update(dto);
 
-            if (accessPermission(reply.getReplyName(), user.getUsername(), user.getRole())) {
-                reply.update(dto);
-                ReplyResponseDto responseDto = new ReplyResponseDto(reply);
-                return new MessageDto(StatusEnum.OK, responseDto);
-            }
-            throw new CustomException(NO_ACCESS);
+            long likeReply = likeReplyRepository.totalcnt(replyId);                             // native-query를 통한 댓글 좋아요 cnt 개수 조회
+            ReplyResponseDto responseDto = new ReplyResponseDto(reply, likeReply);
+            return new MessageDto(StatusEnum.OK, responseDto);
         }
-        throw new CustomException(BAD_REQUEST_TOKEN);
+        throw new CustomException(NO_ACCESS);
     }
 
     // 댓글 삭제 기능
     @Transactional
-    public MessageDto deleteReply(Long id, Long replyId, HttpServletRequest request) {          // 부모클래스인 MessageDto로 리턴타입을 정하고 UserDto도 사용해 다형성 사용
+    public MessageDto deleteReply(Long id, Long replyId, User user) {                                    // id + replyId + Spring Security(userDatailsimple)을 통한 사용자 정보 사용
         Reply reply = replyRepository.findByMemo_MemoIdAndReplyId(id, replyId).orElseThrow(
                 () -> new CustomException(MEMO_NOT_FOUND)
         );
 
-        String token = jwtUtil.resolveToken(request);
-
-        if (token != null) {
-            User user = validateUser(token);
-
-            if (accessPermission(reply.getReplyName(), user.getUsername(), user.getRole())) {
-                replyRepository.deleteByReplyId(replyId);
-                return new MessageDto(StatusEnum.OK);
-            }
-            throw new CustomException(NO_ACCESS);
-        } else {
-            throw new CustomException(BAD_REQUEST_TOKEN);
+        if (accessPermission(reply.getReplyName(), user.getUsername(), user.getRole())) {
+            replyRepository.deleteByReplyId(replyId);
+            return new MessageDto(StatusEnum.OK);
         }
+        throw new CustomException(NO_ACCESS);
     }
 
-    // 글 좋아요 작성 기능
-    public MessageDto createMemoLike(Long id, HttpServletRequest request) {
-        Memo memo = memoRepository.findById(id).orElseThrow(
+    @Transactional
+    // 글 좋아요 기능 구현
+    public MessageDto SetMemoLike(Long id, User user) {                                                 // id + Spring Security(userDatailsimple)을 통한 사용자 정보 사용
+        Memo memo = memoRepository.findById(id).orElseThrow(                                            // Id와 일치하는 글이 있는지 확인
                 () -> new CustomException(MEMO_NOT_FOUND)
         );
 
-        String token = jwtUtil.resolveToken(request);
+        Optional<LikeMemo> likes = likeRepository.findAllByUserId(user.getId());                        // likeMemo에서 일치하는 사용자 정보가 있는지 확인
 
-        if (token != null) {
-            User user = validateUser(token);
-            LikeMemo likeMemo = new LikeMemo(user, memo);
+        if (likes.isEmpty()) {                                                                          // 만약 일치하는 정보가 없으면(해당 글에 좋아요를 시도하는 사용자의 정보가 없으면)
+            LikeMemo likeMemo = new LikeMemo(user, memo);                                               // 좋아요 추가
             likeRepository.save(likeMemo);
             LikeResponseDto responseDto = new LikeResponseDto(likeMemo);
             return new MessageDto(StatusEnum.OK, responseDto);
+        } else {                                                                                        // 일치하는 정보가 있으면(=이미 좋아요를 누른 사용자이면)
+            likeRepository.deleteByUserId(user.getId());                                                // 삭제 처리
+            return new MessageDto(StatusEnum.OK);
         }
-        throw new CustomException(BAD_REQUEST_TOKEN);
     }
 
-    // 글 좋아요 삭제 기능
     @Transactional
-    public MessageDto deleteMemoLike(Long id, HttpServletRequest request) {          // 부모클래스인 MessageDto로 리턴타입을 정하고 UserDto도 사용해 다형성 사용
-        Memo memo = memoRepository.findById(id).orElseThrow(
-                () -> new CustomException(MEMO_NOT_FOUND)
-        );
-        LikeMemo likeMemo = likeRepository.findByMemoMemoId(id).orElseThrow(
-                () -> new CustomException(MEMO_NOT_FOUND)
-        );
-
-
-        String token = jwtUtil.resolveToken(request);
-        if (token != null) {
-            User user = validateUser(token);
-
-            if (user.getId().equals(likeMemo.getUser().getId())) {
-                likeRepository.deleteByMemoMemoId(id);
-                return new MessageDto(StatusEnum.OK);
-            }
-            throw new CustomException(NO_ACCESS);
-        } else {
-            throw new CustomException(BAD_REQUEST_TOKEN);
-        }
-    }
-
-    // 댓글 좋아요 작성 기능
-    public MessageDto createReplyLike(Long id, Long replyId, HttpServletRequest request) {
-        Memo memo = memoRepository.findById(id).orElseThrow(
+    // 댓글 좋아요 기능 구현
+    public MessageDto SetReplyLike(Long id, Long replyId, User user) {                                  // id + Spring Security(userDatailsimple)을 통한 사용자 정보 사용
+        Memo memo = memoRepository.findById(id).orElseThrow(                                            // Id와 일치하는 글이 있는지 확인
                 () -> new CustomException(MEMO_NOT_FOUND)
         );
 
-        Reply reply = replyRepository.findByMemo_MemoIdAndReplyId(id, replyId).orElseThrow(
+        Reply reply = replyRepository.findByMemo_MemoIdAndReplyId(id, replyId).orElseThrow(             // Id와 일치하는 댓글이 있는지 확인
                 () -> new CustomException(MEMO_NOT_FOUND)
         );
 
-        String token = jwtUtil.resolveToken(request);
+        Optional<LikeReply> likes = likeReplyRepository.findAllByUserId(user.getId());                  // likeReply테이블에서 일치하는 사용자 정보가 있는지 확인
 
-        if (token != null) {
-            User user = validateUser(token);
-            LikeReply likeReply = new LikeReply(user, memo, reply);
+        if (likes.isEmpty()) {                                                                          // 만약 일치하는 정보가 없으면(해당 글에 좋아요를 시도하는 사용자의 정보가 없으면)
+            LikeReply likeReply = new LikeReply(user, memo, reply);                                     // 좋아요 추가
             likeReplyRepository.save(likeReply);
             LikeResponseDto responseDto = new LikeResponseDto(likeReply);
             return new MessageDto(StatusEnum.OK, responseDto);
+        } else {                                                                                        // 일치하는 정보가 있으면(=이미 좋아요를 누른 사용자이면)
+            likeReplyRepository.deleteByMemoMemoId(id);                                                 // 삭제 처리
+            return new MessageDto(StatusEnum.OK);
         }
-        throw new CustomException(BAD_REQUEST_TOKEN);
-    }
-
-    // 댓글 좋아요 삭제 기능
-    @Transactional
-    public MessageDto deleteMemoLike(Long id, Long replyId, HttpServletRequest request) {          // 부모클래스인 MessageDto로 리턴타입을 정하고 UserDto도 사용해 다형성 사용
-        Memo memo = memoRepository.findById(id).orElseThrow(
-                () -> new CustomException(MEMO_NOT_FOUND)
-        );
-        Reply reply = replyRepository.findByMemo_MemoIdAndReplyId(id, replyId).orElseThrow(
-                () -> new CustomException(MEMO_NOT_FOUND)
-        );
-        LikeMemo likeMemo = likeRepository.findByMemoMemoId(id).orElseThrow(
-                () -> new CustomException(MEMO_NOT_FOUND)
-        );
-
-
-        String token = jwtUtil.resolveToken(request);
-        if (token != null) {
-            User user = validateUser(token);
-
-            if (user.getId().equals(likeMemo.getUser().getId())) {
-                likeReplyRepository.deleteByReplyReplyId(replyId);
-                return new MessageDto(StatusEnum.OK);
-            }
-            throw new CustomException(NO_ACCESS);
-        } else {
-            throw new CustomException(BAD_REQUEST_TOKEN);
-        }
-    }
-
-    // 유저 체크
-    public User validateUser(String token) {
-        Claims claims = null;
-
-        if (jwtUtil.validateToken(token)) {                 // token이 유효한 거면 생성 가능
-            claims = jwtUtil.getUserInfoFromToken(token);   // 토큰에서 사용자 정보 가져오기
-        } else {
-            throw new CustomException(BAD_REQUEST_TOKEN);
-        }
-
-        User user = userRepository.findByUsername(claims.getSubject()).orElseThrow(
-                () -> new CustomException(LOGIN_MATCH_FAIL)
-        );
-
-        return user;
     }
 
     // 작성자 일치 여부 체크 및 ADMIN 허가 적용
@@ -339,5 +235,16 @@ public class MemoService {
         } else {
             return false;
         }
+    }
+
+    // 댓글 리스트 + 댓글 cnt 조회 기능
+    public List<ReplyResponseDto> addLikeCntToReplyRsponseDto(List<Reply> replies) {
+        List<ReplyResponseDto> exportReplies = new ArrayList<>();
+        for (int i = 0; i < replies.size(); i++) {
+            Long replyId = replies.get(i).getReplyId();
+            Long likeReply = likeReplyRepository.totalcnt(replyId);
+            exportReplies.add(new ReplyResponseDto(replies.get(i), likeReply));
+        }
+        return exportReplies;
     }
 }

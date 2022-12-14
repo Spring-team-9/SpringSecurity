@@ -7,17 +7,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MemoResponseDtoBuilder implements MemoResponseDtoBuilderInterface{
-
     private Long id;
     private String title;
     private String username;
     private String content;
     private LocalDateTime createdAt;
     private LocalDateTime modifiedAt;
-    private int totalcnt;
-//    private Long count;
-    private List<ReplyResponseDto> replies = new ArrayList<>();
+    private Long totalcnt;
 
+    private List<ReplyResponseDto> replies = new ArrayList<>();
 
     @Override
     public MemoResponseDtoBuilderInterface id(Long id) {
@@ -55,16 +53,14 @@ public class MemoResponseDtoBuilder implements MemoResponseDtoBuilderInterface{
         return this;
     }
 
-    public MemoResponseDtoBuilder totalcnt (int totalcnt) {
+    public MemoResponseDtoBuilder totalcnt (Long totalcnt) {
         this.totalcnt = totalcnt;
         return this;
     }
 
     @Override
-    public MemoResponseDtoBuilderInterface addReply(List<Reply> replies) {
-        for(int i=0; i<replies.size(); i++){
-            this.replies.add(new ReplyResponseDto(replies.get(i)));
-        }
+    public MemoResponseDtoBuilderInterface addReply(List<ReplyResponseDto> replies) {
+        this.replies = replies;
         return this;
     }
 
