@@ -17,6 +17,7 @@ public class ApiResult {
     private final CodeError error;
     public ApiResult(CodeSuccess codeSuccess, Object response, CodeError error){
 
+        // 성공 코드 존재시 성공코드를 대입, 부존재시 에러코드를 대입
         if (codeSuccess != null){
             this.status = codeSuccess.getHttpStatus().value();
             this.message = codeSuccess.getDetail();

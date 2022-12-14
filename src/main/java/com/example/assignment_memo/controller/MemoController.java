@@ -40,7 +40,7 @@ public class MemoController {
     @PostMapping("/api/memos")  //POST방식
     public ApiResult createMemo (
             @RequestBody MemoRequestDto dto,
-            @AuthenticationPrincipal UserDetailsImpl userDetails) {
+            @AuthenticationPrincipal UserDetailsImpl userDetails) { // @AuthenticationPrincipal 를 통해 유효한 user 정보 객체를 가져와 사용
 
         MessageDto messageDto = memoService.createMemo(dto, userDetails.getUser());
         return ApiUtil.successResponse(CodeSuccess.CREATE_OK, messageDto);

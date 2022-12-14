@@ -299,7 +299,6 @@ public class MemoService {
             Long test1 = replies.get(i).getReplyId();
             Optional<Long> likeCnt = likeReplyRepository.countByReply_ReplyId(replies.get(i).getReplyId());
             exportReplies.add(new ReplyResponseDto(replies.get(i), likeCnt.get()));
-            Long likeCntL = likeCnt.get();
         }
 
         return exportReplies;
